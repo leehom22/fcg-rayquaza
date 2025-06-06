@@ -155,205 +155,94 @@ void drawCylinderSegment(float radius_, float length_) {
 
     gluDeleteQuadric(quad);
 }
-/*
-void drawHead() {//Segment: radius= 0.5f  ; length= 1.0f
-    //Head: radius=0.5f ; length=1.3f
 
-    glBegin(GL_QUADS);
 
-    glColor3d(0.5, 0.241, 0.51);
-    glVertex3f(0.25f,1.1f,1.0f); //top
-    glVertex3f(0, 1.3f, 0);
-    glVertex3f(0.5f, 1.3f, 0);
+void drawHead() { //z exchange with y
 
-    glVertex3f(0.5f, 1.2f, 0); //right
-    glVertex3f(0.25f, 0.55f, 1.0f);
-    glVertex3f(0.25f, 1.1f, 1.0f);
-    glVertex3f(0.5f, 1.3f, 0);
-    glVertex3f(0.5f, 1.2f, 0);
-
-    glVertex3f(0.25f, 0.55f, 1.0f); //left
-    glVertex3f(0, 1.2f, 0);
-    glVertex3f(0, 1.3f, 0);
-    glVertex3f(0.25f, 1.1f, 1.0f);
-    glVertex3f(0.25f, 0.55f, 1.0f);
-
-    glVertex3f(0.25f, 0.55f, 1.0f); //bottom
-    glVertex3f(0, 1.2f, 0);
-    glVertex3f(0.5f, 1.2f, 0);
-    glVertex3f(0.25f, 0.55f, 1.0f);
-
+    glColor3d(0.0078, 0.6000, 0.1412); //same color with body 
+    // diamter = 0.44
+    // minus x and y with 0.55
+    //glColor3d(1, 0, 0); //red
+    glBegin(GL_QUADS); //base rectangle
+    glVertex3d(0, 0.5, 0); //E
+    glVertex3d(0, 1, 0); //A
+    glVertex3d(-0.55, 1, 0); //B
+    glVertex3d(-0.55, 0.5, 0); //D
     glEnd();
-}
-*/
 
-/*
-void drawRayquaza() {
-    lukisPaksi(); // draw axis
-    //drawHead();
-
-    glColor3d(0.0745, 0.6863, 0.2118); // green color
-    glPushMatrix();
-    glTranslatef(0, 2, -1.0); // start position
-
-    // Segment 1
-    glPushMatrix(); //tail
-    glRotatef((GLfloat)segment1, 0.0, 0.0, 1.0);
-    drawCylinderSegment(0.5f,1.0f);
-
-    // Segment 2
-    glTranslatef(0, 0, ROTATE_LENGTH);
-    glPushMatrix();
-    glRotatef((GLfloat)segment2, 0.0, 1.0, 0.0);
-    drawCylinderSegment(0.5f,1.0f);
-
-    // Segment 3
-    glTranslatef(0, 0, ROTATE_LENGTH);
-    glPushMatrix();
-    glRotatef((GLfloat)segment3, 1.0, 0.0, 0.0);
-    drawCylinderSegment(0.5f,1.0f);
-
-    // Segment 4
-    glTranslatef(0, 0, ROTATE_LENGTH);
-    glPushMatrix();
-    glRotatef((GLfloat)segment4, 1.0, 0.0, 0.0);
-    drawCylinderSegment(0.5f,1.0f);
-
-    // Segment 5
-    glTranslatef(0, 0, ROTATE_LENGTH);
-    glPushMatrix();
-    glRotatef((GLfloat)segment5, 1.0, 0.0, 0.0);
-    drawCylinderSegment(0.5f, 1.0f);
-
-    // Segment 6
-    glTranslatef(0, 0, ROTATE_LENGTH);
-    glPushMatrix();
-    glRotatef((GLfloat)segment6, 1.0, 0.0, 0.0);
-    drawCylinderSegment(0.5f, 1.0f);
-
-    // Segment 7
-    glTranslatef(0, 0, ROTATE_LENGTH);
-    glPushMatrix(); //head
-    glRotatef((GLfloat)segment7, 1.0, 0.0, 0.0);
-    drawCylinderSegment(0.5f, 1.0f);
-
-    // Pop matrices in reverse order
-    glPopMatrix(); // seg 7
-    glPopMatrix(); // seg 6
-    glPopMatrix(); // seg 5
-    glPopMatrix(); // seg 4
-    glPopMatrix(); // seg 3
-    glPopMatrix(); // seg 2
-    glPopMatrix(); // seg 1
-
-    glPopMatrix(); // base translate
-}
-
-*/ //drawRayquaza v1
-
-    void drawEye(float radiusX, float radiusZ, float height, float angleDeg, float verticalFactor) {
-        float angleRad = angleDeg * M_PI / 180.0f;
-
-        // Base center position of the eye
-        float cx = radiusX * cos(angleRad);
-        float cz = radiusZ * sin(angleRad);
-        float cy = height * verticalFactor;
-
-        // Normal vector in the tangent direction (perpendicular to radius vector)
-        float nx = -sin(angleRad);  // points along surface tangent (around cone)
-        float nz = cos(angleRad);
-
-        // Eye size controls
-        float width = 0.1f;   // horizontal base
-        float heightEye = 0.1f; // vertical height
-
-        // Calculate triangle vertices
-        //Bottom center 
-        float ex1 = cx; 
-        float ey1 = cy;
-        float ez1 = cz;
-
-        //Upper right 
-        float ex2 = cx + width * nx;
-        float ey2 = cy + heightEye;
-        float ez2 = cz + width * nz;
-
-        //Upper left
-        float ex3 = cx - width * nx;
-        float ey3 = cy + heightEye;
-        float ez3 = cz - width * nz;
-
-        // Draw the triangle
-        glColor3f(0.0, 0.0, 0.0); // black eye
-        glBegin(GL_TRIANGLES);
-        glVertex3f(ex1, ey1, ez1); // bottom point
-        glVertex3f(ex2, ey2, ez2); // upper right
-        glVertex3f(ex3, ey3, ez3); // upper left
-        glEnd();
-    }
-
-
-void drawHead(double baseRadiusUp, double baseRadiusDown, double height, double slices) {
-
-    double angleStep = M_PI / slices;  // PI = 180 degrees
-
-    double angle = 0;
-    double y = 0;
-    double z = 0;
-
-    double initAngle = 0;
-    double initY = 0;
-    double initZ = 0;
-
-    double halfAngle = 0;
-    double halfY = 0;
-    double halfZ = 0;
-   
-    double radiusX = baseRadiusUp*0.6;
-    double radiusZ = baseRadiusUp;
-
-    drawEye(radiusX, radiusZ-0.3f, height, 63.0f, 0.3f); //change the position of the eyes (left/right, up/down)
-    drawEye(radiusX, radiusZ-0.3f, height, 117.0f, 0.3f);
-
-   
-    glBegin(GL_TRIANGLES);
-    glColor3d(0.0745, 0.6863, 0.2118); //green color same as body 
-    for (int i = 0; i < slices; ++i) {
-        double angle1 = i * angleStep;
-        double angle2 = (i + 1) * angleStep;
-
-        double x1 = radiusX * cos(angle1);
-        double z1 = radiusZ * sin(angle1);
-        double x2 = radiusX * cos(angle2);
-        double z2 = radiusZ * sin(angle2);
-
-        // Triangle from base edge to apex
-        glVertex3d(x1, 0.0, z1);           // base point 1
-        glVertex3d(x2, 0.0, z2);           // base point 2
-        glVertex3d(0.0, height, 0.0);      // apex
-    }
+    //glColor3d(0, 1, 0); //green
+    glBegin(GL_TRIANGLES);  //left triangles
+    glVertex3d(0, 1, 0); // A
+    glVertex3d(-0.17, 0.77, 0.6); //C
+    glVertex3d(0, 0.5, 0); // E
     glEnd();
-   
 
-    double radiusXDown = baseRadiusDown * 0.6;
-    double radiusZDown = baseRadiusDown;
+    //testing to draw an eye on right 
+    
+    //x =-0.49 left eye
+    //x =-0.06  right eye
+    glColor3d(0, 0, 0);
 
     glBegin(GL_TRIANGLES);
-    //glColor3f(1.0, 0.0, 0.0); // red sides
-    for (int i = 0; i < slices; ++i) {
-        double angle1 = i * angleStep;
-        double angle2 = (i + 1) * angleStep;
+    glVertex3d(-0.4978, 0.8321, 0.18585); //I  //left eye
+    glVertex3d(-0.5, 0.7, 0.2); //J 
+    glVertex3d(-0.48038, 0.76614, 0.3243); //K  
 
-        double x1 = radiusXDown * cos(angle1);
-        double z1 = radiusZDown * sin(angle1);
-        double x2 = radiusXDown * cos(angle2);
-        double z2 = radiusZDown * sin(angle2);
+    glVertex3d(-0.06, 0.83, 0.19); //M //right eye
+    glVertex3d(-0.06, 0.7, 0.2); //L 
+    glVertex3d(-0.06, 0.77, 0.32); //N 
+    glEnd();
 
-        // Triangle from base edge to apex
-        glVertex3d(x1, 0.0, z1);           // base point 1
-        glVertex3d(x2, 0.0, z2);           // base point 2
-        glVertex3d(0.0, -height, 0.0);      // apex
-    }
+    /*
+        glPointSize(10.0f);
+    glBegin(GL_POINTS);
+    glColor3d(1, 1, 0);
+    //drawCircle(-0.5, 0.77, 0.24, 1.0, 100);
+    //drawCircle(-0.06, 0.77, 0.24, 1.0, 100);
+    glVertex3d(-0.5, 0.77, 0.24); //O
+    glVertex3d(-0.06, 0.77, 0.24); //P
+    glEnd();
+    */
+    glColor3d(1, 1, 0);
+    glBegin(GL_QUADS); //left eye ball
+    glVertex3d(-0.4970, 0.7725, 0.24); //left
+    glVertex3d(-0.49903, 0.78169, 0.26319);  //up
+    glVertex3d(-0.4970, 0.77, 0.28); //right
+    glVertex3d(-0.49349, 0.74825, 0.26); //down
+
+    glVertex3d(-0.05, 0.74, 0.26); //down
+    glVertex3d(-0.05, 0.77, 0.28009); //right
+    glVertex3d(-0.05, 0.78, 0.26); //up
+    glVertex3d(-0.05, 0.76888, 0.23791); //left
+    glEnd();
+
+    //draw right eye end here 
+
+    glColor3d(0.0078, 0.6000, 0.1412); //same color with body 
+
+    //glColor3d(0, 0, 1); //blue
+    glBegin(GL_TRIANGLES); //right triangles
+    glVertex3d(-0.55, 1, 0); //B
+    glVertex3d(-0.37, 0.77, 0.6); //F
+    glVertex3d(-0.55, 0.5, 0); //D
+    glEnd();
+
+    //glColor3d(1, 1, 0); //yellow
+    glBegin(GL_QUADS); //top triangles
+    glVertex3d(-0.55, 1, 0); //B
+    glVertex3d(0, 1, 0); //A
+    glVertex3d(-0.17, 0.77, 0.6); //C
+    glVertex3d(-0.37, 0.77, 0.6); //F
+    glVertex3d(-0.55, 1, 0); //B
+    glEnd();
+
+    //glColor3d(1, 0, 1); //magenta
+    glBegin(GL_QUADS);//botom triangles
+    glVertex3d(-0.17, 0.77, 0.6); //C
+    //glVertex3d(0, 0.77, 0);  // G
+    //glVertex3d(-1, 0.5, 0);  //H
+    glVertex3d(-0.37, 0.77, 0.6); //F
+    glVertex3d(-0.17, 0.77, 0.6); //C
     glEnd();
 }
 
@@ -432,7 +321,11 @@ void drawRayquaza() {
 
         }else if (i == NUM_SEGMENTS - 1) {
 
-            drawHead(0.45, 0.40, 0.3, 50.0);
+            //drawHead(0.45, 0.40, 0.3, 50.0);
+            glPushMatrix();
+            glTranslated(0.3, -0.75, 0.0);
+            drawHead();
+            glPopMatrix();
         }
         else {
             glPushMatrix(); //straight line up
@@ -732,92 +625,3 @@ int main(int argc, char** argv) {
 }
 
 
-
-
-/*
-#include <GL/glut.h>
-#include <cmath>
-
-const int SEGMENTS = 20;
-const float SEG_LENGTH = 0.5f;
-const float SEG_RADIUS = 0.2f;
-
-float timeAngle = 0.0f; // Time for animation
-
-void drawCylinderSegment() {
-    GLUquadric* quad = gluNewQuadric();
-    gluCylinder(quad, SEG_RADIUS, SEG_RADIUS, SEG_LENGTH, 20, 5);
-
-    // Optional caps
-    gluDisk(quad, 0, SEG_RADIUS, 20, 1);
-    glTranslatef(0, 0, SEG_LENGTH);
-    gluDisk(quad, 0, SEG_RADIUS, 20, 1);
-
-    gluDeleteQuadric(quad);
-    glTranslatef(0, 0, -SEG_LENGTH); // Reset position
-}
-
-void drawTrunk(float timeAngle) {
-    for (int i = 0; i < SEGMENTS; i++) {
-        glPushMatrix();
-
-        // Animate bend using sine wave
-        float angleY = sinf(timeAngle + i * 0.3f) * 15.0f;  // Horizontal wave
-        float angleX = cosf(timeAngle + i * 0.3f) * 5.0f;   // Vertical wave
-
-        glRotatef(angleX, 1, 0, 0);
-        glRotatef(angleY, 0, 1, 0);
-
-        drawCylinderSegment();
-
-        // Move forward to next segment
-        glTranslatef(0, 0, SEG_LENGTH);
-        glPopMatrix();
-
-        // Move base position for next segment
-        glTranslatef(0, 0, SEG_LENGTH);
-    }
-}
-
-void display() {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();
-
-    gluLookAt(5, 5, 15, 0, 0, 0, 0, 1, 0);
-
-    glColor3f(0.0, 0.8, 0.2); // Rayquaza green
-
-    glPushMatrix();
-    drawTrunk(timeAngle);
-    glPopMatrix();
-
-    glutSwapBuffers();
-}
-
-void update(int value) {
-    timeAngle += 0.05f;  // Increment time for wave animation
-
-    glutPostRedisplay();            // Request redraw
-    glutTimerFunc(16, update, 0);   // Schedule next update (60 FPS)
-}
-
-void init() {
-    glEnable(GL_DEPTH_TEST);
-    glClearColor(1, 1, 1, 1); // White background
-    glMatrixMode(GL_PROJECTION);
-    gluPerspective(45, 1.33, 1, 100);
-    glMatrixMode(GL_MODELVIEW);
-}
-
-int main(int argc, char** argv) {
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-    glutInitWindowSize(800, 600);
-    glutCreateWindow("Animated Rayquaza Trunk");
-    init();
-    glutDisplayFunc(display);
-    glutTimerFunc(0, update, 0); // Start animation timer
-    glutMainLoop();
-    return 0;
-}
-*/
