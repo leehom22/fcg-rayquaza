@@ -244,6 +244,38 @@ void drawHead() { //z exchange with y
     glVertex3d(-0.37, 0.77, 0.6); //F
     glVertex3d(-0.17, 0.77, 0.6); //C
     glEnd();
+    
+    // fins
+    glColor3d(0.0078, 0.6000, 0.1412); //color
+
+    // top fin
+    glBegin(GL_POLYGON);
+    glVertex3d(-0.48, 0.55, 0.11);
+    glVertex3d(-1.25,0.01,-0.02);
+    glVertex3d(-0.66,0.42,-0.17);
+    glVertex3d(-0.66, 0.42,0.0);
+    glEnd();
+
+    glBegin(GL_POLYGON);
+    glVertex3d(-0.04, 0.55, 0.11);
+    glVertex3d(0.73, 0.01, -0.02);
+    glVertex3d(0.14, 0.42, -0.17);
+    glVertex3d(0.14, 0.42, 0.0);
+    glEnd();
+
+    glBegin(GL_POLYGON);
+    glVertex3d(-0.48, 0.95, 0.11);
+    glVertex3d(-1.25, 1.49, -0.02);
+    glVertex3d(-0.66, 1.08, -0.17);
+    glVertex3d(-0.66, 1.08, 0.0);
+    glEnd();
+
+    glBegin(GL_POLYGON);
+    glVertex3d(-0.04, 0.95, 0.11);
+    glVertex3d(0.73, 1.49, -0.02);
+    glVertex3d(0.14, 1.08, -0.17);
+    glVertex3d(0.14, 1.08, 0.0);
+    glEnd();
 }
 
 void drawRayquaza() {
@@ -423,7 +455,7 @@ void mouseMove(int x, int y) { //comtrol mouse
         float totalAngle = angle + deltaANGLE;
         float totalPitch = pitch + deltaPitch;
 
-        // Clamp pitch to avoid flipping (e.g., -89° to +89°)
+        // Clamp pitch to avoid flipping (e.g., -89Â° to +89Â°)
         if (totalPitch > 1.5f) totalPitch = 1.5f;
         if (totalPitch < -1.5f) totalPitch = -1.5f;
 
@@ -623,5 +655,4 @@ int main(int argc, char** argv) {
     glutMainLoop();
     return 0;
 }
-
 
