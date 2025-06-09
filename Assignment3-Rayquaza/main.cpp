@@ -1,5 +1,7 @@
 #include <GL/glut.h>
 #include <cmath>
+
+
 #define NUM_SEGMENTS 6
 #define M_PI 3.14159265359
 
@@ -39,6 +41,17 @@ bool moveLeft = false;
 bool moveRight = false;
 bool resetBody = false;
 
+//darshini
+float energyOffset = 0.0f;
+float ballZ = 0.0f;
+float ballScale = 0.1;
+float explosionTime = 0.0f;
+float ball = 0.0f;
+
+//darshini
+bool shooting = false; // to make the energy ball shoot
+bool exploding = false;
+
 void lukisPaksi()
 {
     glColor3f(0, 0, 0);
@@ -64,30 +77,6 @@ void reshape(int w, int h)
     glTranslatef(0.0, 0.0, -5.0);
 }
 
-void drawStripeOnSegment(float radius, float length) {
-    int segments = 100;  // smoother stripe
-    float angleStep = 360.0f / segments;
-    float stripeHeight = 0.05f; // vertical thickness of stripe
-
-    glColor3f(0.9098f, 0.8980f, 0.1020f);// dark yellow stripe
-    glBegin(GL_QUAD_STRIP);
-    for (int i = 0; i <= segments; i++) {
-        float angle = i * angleStep * M_PI / 180.0f;
-
-        float x = radius * cos(angle);
-        float y = radius * sin(angle);
-        float z1 = 0.0f;
-        float z2 = length;
-
-        // Horizontal stripe near the middle of the body
-        float stripeY1 = y;
-        float stripeY2 = y + stripeHeight;
-
-        glVertex3f(x, stripeY1, z1);  // lower edge of stripe at z1
-        glVertex3f(x, stripeY1, z2);  // lower edge of stripe at z2
-    }
-    glEnd();
-}
 
 void drawHorizontalStripe(float radiusX, float radiusY, float zPos, float stripeWidth) {
     int segments = 100;
@@ -135,12 +124,38 @@ void drawStraightStripe(float radius, float length, float stripeWidth, float ang
 }
 
 
+
+void drawStripeOnSegment(float radius, float length) {
+    int segments = 100;  // smoother stripe
+    float angleStep = 360.0f / segments;
+    float stripeHeight = 0.05f; // vertical thickness of stripe
+
+    glColor3f(0.9098f, 0.8980f, 0.1020f);// dark yellow stripe
+    glBegin(GL_QUAD_STRIP);
+    for (int i = 0; i <= segments; i++) {
+        float angle = i * angleStep * M_PI / 180.0f;
+
+        float x = radius * cos(angle);
+        float y = radius * sin(angle);
+        float z1 = 0.0f;
+        float z2 = length;
+
+        // Horizontal stripe near the middle of the body
+        float stripeY1 = y;
+        float stripeY2 = y + stripeHeight;
+
+        glVertex3f(x, stripeY1, z1);  // lower edge of stripe at z1
+        glVertex3f(x, stripeY1, z2);  // lower edge of stripe at z2
+    }
+    glEnd();
+}
+
 void drawCylinderSegment(float radius_, float length_) {
-     
+
     float seg_radius = radius_;
     float seg_length = length_;
 
-    if (radius_ == 0||length_==0) {
+    if (radius_ == 0 || length_ == 0) {
         seg_radius = SEG_RADIUS;
         seg_length = SEG_LENGTH;
     }
@@ -178,7 +193,7 @@ void drawHead() { //z exchange with y
     glEnd();
 
     //testing to draw an eye on right 
-    
+
     //x =-0.49 left eye
     //x =-0.06  right eye
     glColor3d(0, 0, 0);
@@ -193,16 +208,6 @@ void drawHead() { //z exchange with y
     glVertex3d(-0.06, 0.77, 0.32); //N 
     glEnd();
 
-    /*
-        glPointSize(10.0f);
-    glBegin(GL_POINTS);
-    glColor3d(1, 1, 0);
-    //drawCircle(-0.5, 0.77, 0.24, 1.0, 100);
-    //drawCircle(-0.06, 0.77, 0.24, 1.0, 100);
-    glVertex3d(-0.5, 0.77, 0.24); //O
-    glVertex3d(-0.06, 0.77, 0.24); //P
-    glEnd();
-    */
     glColor3d(1, 1, 0);
     glBegin(GL_QUADS); //left eye ball
     glVertex3d(-0.4970, 0.7725, 0.24); //left
@@ -244,6 +249,301 @@ void drawHead() { //z exchange with y
     glVertex3d(-0.37, 0.77, 0.6); //F
     glVertex3d(-0.17, 0.77, 0.6); //C
     glEnd();
+
+    // fins //justin
+    glColor3d(0.0078, 0.6000, 0.1412); //color
+
+    // top fin
+    glBegin(GL_POLYGON);
+    glVertex3d(-0.48, 0.55, 0.11);
+    glVertex3d(-1.25, 0.01, -0.02);
+    glVertex3d(-0.66, 0.42, -0.17);
+    glVertex3d(-0.66, 0.42, 0.0);
+    glEnd();
+
+    glBegin(GL_POLYGON);
+    glVertex3d(-0.04, 0.55, 0.11);
+    glVertex3d(0.73, 0.01, -0.02);
+    glVertex3d(0.14, 0.42, -0.17);
+    glVertex3d(0.14, 0.42, 0.0);
+    glEnd();
+
+    glBegin(GL_POLYGON);
+    glVertex3d(-0.48, 0.95, 0.11);
+    glVertex3d(-1.25, 1.49, -0.02);
+    glVertex3d(-0.66, 1.08, -0.17);
+    glVertex3d(-0.66, 1.08, 0.0);
+    glEnd();
+
+    glBegin(GL_POLYGON);
+    glVertex3d(-0.04, 0.95, 0.11);
+    glVertex3d(0.73, 1.49, -0.02);
+    glVertex3d(0.14, 1.08, -0.17);
+    glVertex3d(0.14, 1.08, 0.0);
+    glEnd();
+}
+
+void drawEnergyBall(float radius) { //darshini
+    glPushMatrix();
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glColor4f(0.2f, 0.8f, 1.0f, 0.7f); //cyan
+
+    for (int i = 0; i < 3; ++i) {
+        glutSolidSphere(radius - i * 0.02f, 20, 20);
+    }
+
+    glDisable(GL_BLEND);
+    glPopMatrix();
+}
+
+void drawClaw() { //darshini
+    glPushMatrix();
+    glColor3f(0.8f, 0.8f, 0.1f); // Yellow claw color
+
+    // Draw three claw fingers
+    for (int i = 0; i < 3; i++) {
+        glPushMatrix();
+        glRotatef(i * 30.0f - 30.0f, 0.0f, 1.0f, 0.0f); // Spread fingers
+        glTranslatef(0.0f, 0.0f, 0.1f); // Move forward
+
+        // Cone-shaped claw
+        GLUquadric* quad = gluNewQuadric();
+        gluCylinder(quad, 0.03f, 0.01f, 0.15f, 6, 1);
+        glTranslatef(0.0f, 0.0f, 0.15f);
+        gluDisk(quad, 0, 0.01f, 6, 1);
+        gluDeleteQuadric(quad);
+
+        glPopMatrix();
+    }
+    glPopMatrix();
+}
+
+void drawForearm(float length, float radius) { //darshini
+    GLUquadric* quad = gluNewQuadric();
+    glColor3f(0.0f, 0.8f, 0.2f); // green
+    gluCylinder(quad, radius, radius * 0.6f, length, 10, 5);
+    glTranslatef(0.0f, 0.0f, length);
+    drawClaw();
+    gluDeleteQuadric(quad);
+}
+
+
+void drawUpperArm(float length, float radius, bool isLeft) { //darshini
+    GLUquadric* quad = gluNewQuadric();
+    glColor3f(0.0f, 0.8f, 0.2f); // green
+    gluCylinder(quad, radius, radius * 0.8f, length, 10, 5);
+    glTranslatef(0.0f, 0.0f, length);
+
+    if (isLeft) glRotatef(30, 0, 1, 0);  // left
+
+    else
+        glRotatef(-30, 0, 1, 0); // right
+
+    drawForearm(0.3f, radius * 0.8f);
+    gluDeleteQuadric(quad);
+}
+
+void drawArm(bool isLeft) { //darshini
+    glPushMatrix();
+
+    // Position left/right
+    float sideOffset = isLeft ? -0.22f : 0.22f;
+    glTranslatef(sideOffset, -0.1f, 0.0f); // offset from body
+
+    // Shoulder sphere
+    glColor3f(0.0f, 0.6f, 0.0f);
+    glutSolidSphere(0.1f, 20, 20);
+
+    // Arm rotation
+    glPushMatrix();
+    float shoulderTilt = isLeft ? 30.0f : -30.0f;
+    float forwardAngle = isLeft ? -25.0f : 25.0f;
+    glRotatef(shoulderTilt, 0, 0, 1);   // tilt down
+    glRotatef(forwardAngle, 0, 1, 0);   // rotate forward
+    drawUpperArm(0.1f, 0.06f, isLeft);
+    glPopMatrix();
+
+    glPopMatrix();
+}
+
+void drawFin() {
+
+    glBegin(GL_QUADS);
+    glColor3d(0.0078, 0.6000, 0.1412);//green
+    double width = 0.02;
+    double height = 0.5;
+    double length = 0;
+    //inner
+    // FRONT face (A-B-C-D)
+    glVertex3d(0, 0, 0);     // A
+    glVertex3d(0, 0.5, 0.3); // B
+    glVertex3d(0, height, 0.6);   // C
+    glVertex3d(0, 0, 0.9);   // D
+
+    // BACK face (E-F-G-H)
+    glVertex3d(width, 0, 0);     // E
+    glVertex3d(width, height, 0.3); // F
+    glVertex3d(width, height, 0.6);   // G
+    glVertex3d(width, 0, 0.9);   // H
+
+    // LEFT face (A-B-F-E)
+    glVertex3d(0, 0, 0);     // A
+    glVertex3d(0, height, 0.3); // B
+    glVertex3d(width, height, 0.3); // F
+    glVertex3d(width, 0, 0);   // E
+
+    // RIGHT face (C-D-H-G)
+    glVertex3d(0, height, 0.6);   // C
+    glVertex3d(0, 0, 0.9);   // D
+    glVertex3d(width, 0, 0.9); // H
+    glVertex3d(width, height, 0.6); // G
+
+    // TOP face (B-C-G-F)
+    glVertex3d(0, height, 0.3); // B
+    glVertex3d(0, height, 0.6);   // C
+    glVertex3d(width, height, 0.6); // G
+    glVertex3d(width, height, 0.3); // F
+
+    // BOTTOM face (A-D-H-E)
+    glVertex3d(0, 0, 0);     // A
+    glVertex3d(0, 0, 0.9);   // D
+    glVertex3d(width, 0, 0.9); // H
+    glVertex3d(width, 0, 0);   // E
+
+    //outer
+    glEnd();
+
+
+    //outline - left-top
+    glBegin(GL_POLYGON);
+    glColor3d(0.91, 0, 0);//dark red
+
+    glVertex3d(-0.001, 0.47, 0.3);   // J
+    glVertex3d(-0.001, 0.47, 0.6);   // K
+    glVertex3d(-0.001, height, 0.6);   // C
+    glVertex3d(-0.001, 0.5, 0.3); // B
+
+    glEnd();
+
+    //outline - left-right
+    glBegin(GL_POLYGON);
+    glColor3d(0.91, 0, 0);//dark red
+
+    glVertex3d(-0.001, height, 0.6);   // C
+    glVertex3d(-0.001, 0.50, 0.54);   // K
+    glVertex3d(0.0, 0.0, 0.8);   // L
+    glVertex3d(0, 0, 0.9);   // D
+
+    glEnd();
+
+    //outline - left-left
+    glBegin(GL_POLYGON);
+    glColor3d(0.91, 0, 0);//dark red
+
+    glVertex3d(-0.001, 0.47, 0.35);   // J
+    glVertex3d(0.0, 0.0, 0.1);   // I
+    glVertex3d(0, 0, 0);     // A
+    glVertex3d(0, height, 0.3); // B
+
+    glEnd();
+
+    //outline - right-top
+    glBegin(GL_POLYGON);
+    glColor3d(0.91, 0, 0);//dark red
+
+    glVertex3d(width, height, 0.6); // G
+    glVertex3d(0.07, 0.45, 0.6);   // O
+    glVertex3d(0.07, 0.45, 0.3);   // N
+    glVertex3d(width, height, 0.3); // F
+
+    glEnd();
+
+    //outline - right-right
+    glBegin(GL_POLYGON);
+    glColor3d(0.91, 0, 0);//dark red
+
+    glVertex3d(width, height, 0.3); // F
+    glVertex3d(width, 0, 0);   // E
+    glVertex3d(0.07, 0.0, 0.1);   // M
+    glVertex3d(0.07, 0.45, 0.35);   // N
+
+    glEnd();
+
+    //outline - right-left
+    glBegin(GL_POLYGON);
+    glColor3d(0.91, 0, 0);//dark red
+
+    glVertex3d(width, height, 0.6); // G
+    glVertex3d(0.07, 0.45, 0.55);   // O
+    glVertex3d(0.07, 0.0, 0.8);   // P
+    glVertex3d(width, 0, 0.9); // H
+
+    glEnd();
+
+    //outline - top
+    glBegin(GL_POLYGON);
+    glColor3d(0.91, 0, 0);//dark red
+    glVertex3d(0, height + 0.01, 0.3); // B
+    glVertex3d(width, height + 0.01, 0.3); // F
+    glVertex3d(width, height + 0.01, 0.6); // G
+    glVertex3d(-0.001, height + 0.01, 0.6);   // C
+    glEnd();
+
+    //outline - top-right
+    glBegin(GL_POLYGON);
+    glColor3d(0.91, 0, 0);//dark red
+    glVertex3d(0, height + 0.01, 0.3); // B
+    glVertex3d(width, height + 0.01, 0.3); // F
+    glVertex3d(width, 0.01, 0);   // E
+    glVertex3d(0, 0.01, 0);     // A
+    glEnd();
+
+    //outline - top-left
+    glBegin(GL_POLYGON);
+    glColor3d(0.91, 0, 0);//dark red
+    glVertex3d(-0.001, height + 0.01, 0.6);   // C
+    glVertex3d(width, height + 0.01, 0.6); // G
+    glVertex3d(width, 0, 0.9); // H
+    glVertex3d(0, 0.01, 0.9);   // D
+    glEnd();
+}
+
+void drawFinTail() { //y=0.3 z=1.0 x=0.03
+    double height = 0.3;
+    double length = 1.0;
+    double width = 0.03;
+
+    glBegin(GL_POLYGON);  //front
+    glColor3d(0.0078, 0.6000, 0.1412); //body color
+    glVertex3d(0, 0, 0);   // A
+    glVertex3d(0, height, 0);   // B
+    glVertex3d(0, 0, length);   // C
+    glEnd();
+
+    glBegin(GL_POLYGON);  //back
+    glColor3d(0.0078, 0.6000, 0.1412); //body color
+    glVertex3d(width, 0, 0);   // D
+    glVertex3d(width, height, 0);   // E
+    glVertex3d(width, 0, length);   // F
+    glEnd();
+
+    glBegin(GL_POLYGON);  //top BEFC
+    glColor3d(0.91, 0, 0);//dark red 
+    glVertex3d(0, height, 0);   // B
+    glVertex3d(width, height, 0);   // E
+    glVertex3d(width, 0, length);   // F
+    glVertex3d(0, 0, length);   // C
+    glEnd();
+
+    glBegin(GL_POLYGON);  //right BEDA
+    glColor3d(0.91, 0, 0);//dark red 
+    glVertex3d(0, height, 0);   // B
+    glVertex3d(width, height, 0);   // E
+    glVertex3d(width, 0, 0);   // D
+    glVertex3d(0, 0, 0);   // A
+    glEnd();
 }
 
 void drawRayquaza() {
@@ -257,9 +557,31 @@ void drawRayquaza() {
 
         if (i == 0) {
 
-            drawCylinderSegment(0.1f, 1.0f);       
+            glPushMatrix(); //top
+            drawFinTail();
+            glPopMatrix();
+
+            glPushMatrix(); //bottom
+            glRotated(180, 0, 0, 1);
+            drawFinTail();
+            glPopMatrix();
+
+            glPushMatrix(); //left
+            glRotated(90, 0, 0, 1);
+            drawFinTail();
+            glPopMatrix();
+
+            glPushMatrix(); //right
+            glRotated(90, 0, 0, -1);
+            drawFinTail();
+            glPopMatrix();
+
+            glColor3d(0.0078, 0.6000, 0.1412); //body 
+
+            drawCylinderSegment(0.1f, 1.0f);
         }
         else if (i == 1) {
+            double scale = 0.7;
 
             glPushMatrix(); //straight line up
             glTranslated(0.0, -0.85, 0.58);
@@ -268,7 +590,7 @@ void drawRayquaza() {
 
             glPushMatrix(); //horizontal oval up
             glTranslated(0.0, 0.14, 0.42);
-            drawHorizontalStripe(0.06f,0.17f, 0.03f,0.03f); //x,y,z,stripeWidth
+            drawHorizontalStripe(0.06f, 0.17f, 0.03f, 0.03f); //x,y,z,stripeWidth
             glPopMatrix();
 
             glPushMatrix(); //straaight line down
@@ -284,6 +606,34 @@ void drawRayquaza() {
             glPushMatrix(); //vertical circle 
             glTranslated(0.0, 0.0, 0.23);
             drawStripeOnSegment(0.15f, 0.03f);
+            glPopMatrix();
+
+            //Upper fin
+            glPushMatrix();
+            glScaled(scale, scale, scale);
+            glRotated(20, 0, 0, 1);
+            drawFin();
+            glPopMatrix();
+
+            //bottom fin
+            glPushMatrix();
+            glScaled(scale, scale, scale);
+            glRotated(200, 0, 0, 1);
+            drawFin();
+            glPopMatrix();
+
+            //left fin
+            glPushMatrix();
+            glScaled(scale, scale, scale);
+            glRotated(110, 0, 0, 1);
+            drawFin();
+            glPopMatrix();
+
+            //right fin
+            glPushMatrix();
+            glScaled(scale, scale, scale);
+            glRotated(-110, 0, 0, 1);
+            drawFin();
             glPopMatrix();
 
             glColor3d(0.0078, 0.6000, 0.1412); //body 
@@ -319,13 +669,132 @@ void drawRayquaza() {
             glColor3d(0.0078, 0.6000, 0.1412); //body
             drawCylinderSegment(0.2f, 1.1f);
 
-        }else if (i == NUM_SEGMENTS - 1) {
+            // right arm
+            glPushMatrix();
+            glTranslatef(0.0f, 0.0f, 0.5f);
+            drawArm(false);
+            glPopMatrix();
 
-            //drawHead(0.45, 0.40, 0.3, 50.0);
+            // lefft arm
+            glPushMatrix();
+            glTranslatef(0.0f, 0.0f, 0.5f);
+            drawArm(true);
+            glPopMatrix();
+
+            // Fins (left and right) 
+            glPushMatrix();
+            glTranslated(0.0, 0.0, 0.3);  // adjust position along the segment
+            glColor3d(1.0, 0.0, 0.0);     // red fins
+
+            //Upper fin
+            glPushMatrix();
+            glTranslated(0, 0, -1);
+            drawFin();
+            glPopMatrix();
+
+            //bottom fin
+            glPushMatrix();
+            glTranslated(0, 0, -1);
+            glRotated(180, 0, 0, 1);
+            drawFin();
+            glPopMatrix();
+
+            //left fin
+            glPushMatrix();
+            glTranslated(0, 0, -1);
+            glRotated(90, 0, 0, 1);
+            drawFin();
+            glPopMatrix();
+
+            //right fin
+            glPushMatrix();
+            glTranslated(0, 0, -1);
+            glRotated(-90, 0, 0, 1);
+            drawFin();
+            glPopMatrix();
+
+            // Left fin //azim
+            glPushMatrix();
+            glTranslated(-0.1, 0.0, 0.0);
+
+            glEnd();
+            glPopMatrix();
+
+            glPopMatrix();
+
+            // tail fin //azim
+            glPushMatrix();
+            glTranslated(0.0, 0.0, 1.0); // move to end of the tail segment
+            glColor3d(1.0, 0.0, 0.0);    // red tail fin
+
+            glBegin(GL_TRIANGLES);
+            // vertical fin //azim
+            glVertex3f(0.0f, 0.0f, 0.0f);
+            glVertex3f(0.0f, 0.3f, 0.2f);
+            glVertex3f(0.0f, -0.3f, 0.2f);
+            glEnd();
+
+            glBegin(GL_TRIANGLES);
+            // horizontal fin //azim
+            glVertex3f(0.0f, 0.0f, 0.0f);
+            glVertex3f(0.3f, 0.0f, 0.2f);
+            glVertex3f(-0.3f, 0.0f, 0.2f);
+            glEnd();
+
+            glPopMatrix();
+
+
+        }
+
+        else if (i == NUM_SEGMENTS - 2) {
+
+            double scale = 1.2;
+
+            glPushMatrix();
+            glTranslated(0, 0, -0.2);
+            glRotated(45, 0, 0, 1);
+            glScaled(scale, scale, scale);
+            drawFin();
+            glPopMatrix();
+
+            glPushMatrix();
+            glTranslated(0, 0, -0.2);
+            glRotated(-45, 0, 0, 1);
+            glScaled(scale, scale, scale);
+            drawFin();
+            glPopMatrix();
+
+            glColor3d(0.0078, 0.6000, 0.1412); //body
+            drawCylinderSegment(0.22f, 1.2);
+        }
+
+        else if (i == NUM_SEGMENTS - 1) { //head
+
             glPushMatrix();
             glTranslated(0.3, -0.75, 0.0);
             drawHead();
             glPopMatrix();
+
+
+            //drawHead();
+
+            //shhooting ball
+            if (shooting) { //darshini
+                glPushMatrix();
+                glTranslatef(0.0f, 0.0f, 0.6f + ballZ);  // forward from mouth
+                drawEnergyBall(ballScale);
+                glPopMatrix();
+            }
+
+            // explosion effect
+            if (exploding) {
+                glPushMatrix();
+                glTranslatef(0.0f, 0.0f, 6.0f);
+                glColor4f(1.0f, 0.5f, 0.0f, 0.7f);  // fiery orange ?
+                glutSolidSphere(0.5f + 0.5f * sin(explosionTime * 10), 30, 30);
+                glPopMatrix();
+            }
+
         }
         else {
             glPushMatrix(); //straight line up
@@ -353,11 +822,15 @@ void drawRayquaza() {
             drawStripeOnSegment(0.22f, 0.05f);
             glPopMatrix();
 
+            glPushMatrix();
+            glTranslated(0, 0, -0.5);
+            glPopMatrix();
+
             glColor3d(0.0078, 0.6000, 0.1412); //body
             drawCylinderSegment(0.22f, 1.2);
-           
+
         }
-                               
+
         glTranslatef(0.0f, 0.0f, segmentLength);       // move forward to next segment
     }
 
@@ -461,9 +934,31 @@ void keyboard(unsigned char key, int x, int y)
     case 's': moveLeft = true; break;
     case 'f': moveRight = true; break;
     case 'r': resetBody = true; break;
+    case 'z': //darshini
+        if (!shooting) {
+            shooting = true;
+            ballZ = 0.3f;
+            ballScale = 0.15f;
+        }
+        break;
     case 27: exit(0); break;
     }
 }
+
+/*
+void keyboard(unsigned char key, int x, int y)
+{
+    switch (key) {
+    case 'e': moveUp = true; break;
+    case 'd': moveDown = true; break;
+    case 's': moveLeft = true; break;
+    case 'f': moveRight = true; break;
+    case 'r': resetBody = true; break;
+    case 27: exit(0); break;
+    }
+}
+*/
+
 
 void keyboardUp(unsigned char key, int x, int y)
 {
@@ -505,25 +1000,25 @@ void keyboardRayquaza(unsigned char key, int x, int y)
 {
     switch (key) {
     case 'e': //up
-        updateBodyWave(5.0f,'e');
+        updateBodyWave(5.0f, 'e');
         glutPostRedisplay();
         break;
-   
+
     case 'd': //down
-        updateBodyWave(5.0f,'d');
+        updateBodyWave(5.0f, 'd');
         glutPostRedisplay();
         break;
-   
+
     case 's': //left
-        updateBodyWave(5.0f,'s');
+        updateBodyWave(5.0f, 's');
         glutPostRedisplay();
         break;
-   
+
     case 'f': //right
-        updateBodyWave(5.0f,'f');
+        updateBodyWave(5.0f, 'f');
         glutPostRedisplay();
         break;
-   
+
     case 27:
         exit(0);
         break;
@@ -548,6 +1043,30 @@ void update(int value)
     if (resetBody)
         updateBodyWave(0.0f, 'r');
 
+    if (shooting) { //darshini
+        ballZ += 0.1f; //speed of the ball
+        ballScale += 0.005f;// make it grow as it explodes
+        ball += 0.1f;
+        glScalef(ballScale, ballScale, ball);
+        glutSolidSphere(1.0f, 20, 20);
+
+        if (ballZ > 6.0f) {
+            shooting = false;
+            exploding = true;
+            explosionTime = 0.0f;
+            ballZ = 0.0f;
+            ballScale = 0.1f;
+        }
+    }
+
+    if (exploding) { //darshini
+        explosionTime += 0.05f;
+        if (explosionTime > 1.0f) {
+            exploding = false;
+        }
+    }
+
+    //origin
     glutPostRedisplay(); // redraw the screen
     glutTimerFunc(16, update, 0); // roughly 60 FPS
 }
@@ -555,7 +1074,7 @@ void update(int value)
 void display(void) { //equivalant to renderScene
     if (deltaMove != 0)
         computePos(deltaMove);
-        computeUpDown(deltaY);
+    computeUpDown(deltaY);
 
     if (deltaAngleLR != 0.0f) {
         angle += deltaAngleLR;
@@ -611,7 +1130,7 @@ int main(int argc, char** argv) {
     glutSpecialFunc(pressKey); //added
     glutSpecialUpFunc(releaseKey); //added
 
-    
+
     glutKeyboardFunc(keyboard);
     glutKeyboardUpFunc(keyboardUp);
 
@@ -623,5 +1142,3 @@ int main(int argc, char** argv) {
     glutMainLoop();
     return 0;
 }
-
-
