@@ -1,9 +1,15 @@
 #include <GL/glut.h>
 #include <cmath>
+#include <cstdlib>
+#include <ctime>
+#include <iostream>
+#include "imageloader.h"
 
+using namespace std;
 
 #define NUM_SEGMENTS 6
 #define M_PI 3.14159265359
+#define NUM_CLOUDS 50
 
 const int SEGMENTS = 20;       // More segments = smoother S
 const float SEG_LENGTH = 1.0f; // Length of each segment
@@ -18,7 +24,8 @@ float lx = 0.0f, lz = -1.0f, ly = 0.1f;
 
 float x = 0.0f, z = 5.0f, y = 0.0f;
 
-float deltaANGLE = 0.0F;
+
+float deltaANGLE = 0.0f;
 float deltaMove = 0;
 float deltaAngleLR = 0.0f;
 float deltaY = 0.0f;
@@ -29,9 +36,15 @@ float deltaPitch = 0.0f;
 int xOrigin = -1;
 int yOrigin = -1;
 
+//Translation whrn body move
+float moveX[NUM_SEGMENTS];
+float moveY[NUM_SEGMENTS];
+float moveZ[NUM_SEGMENTS];
+
 float segments[NUM_SEGMENTS] = { 0, 0, 0, 0 }; // from tail (0) to head (3)
 const float segmentLength = 0.01f; // adjust this based on your model
 
+//Rotation when body move
 float yawSegments[NUM_SEGMENTS];
 float pitchSegments[NUM_SEGMENTS];
 
@@ -39,7 +52,17 @@ bool moveUp = false;
 bool moveDown = false;
 bool moveLeft = false;
 bool moveRight = false;
+
+bool forwardFront = false;
+bool forwardBack = false;
+bool forwardLeft = false;
+bool forwardRight = false;
+bool forwardUp = false;
+bool forwardDown = false;
+
+
 bool resetBody = false;
+bool resetLocation = false;
 
 //darshini
 float energyOffset = 0.0f;
@@ -51,6 +74,39 @@ float ball = 0.0f;
 //darshini
 bool shooting = false; // to make the energy ball shoot
 bool exploding = false;
+
+//cloud
+double cloudPosition[NUM_CLOUDS][3];
+double cloudOffSet = 0.0;
+
+ // Light 0 setup (white directional light from top)
+    GLfloat light_pos[] = { 1.0f, 8.0f, 5.0f, 1.0f }; // positional light //directional light w=0 //for sun
+    GLfloat light_diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f }; // white light
+    GLfloat light_ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f }; // low ambient light
+    GLfloat light1_pos[] = { 1.0f, 3.0f,7.0f, 0.0f }; //for main model
+
+    //texture mapping
+    GLuint loadTexture(Image* image)
+    {
+        GLuint textureId;
+        glGenTextures(1, &textureId); // Make room for our texture
+        glBindTexture(GL_TEXTURE_2D, textureId); // Tell OpenGL which texture to edit
+        // Map the image to the texture
+        glTexImage2D(GL_TEXTURE_2D,
+            0,                // Always GL_TEXTURE_2D
+            GL_RGB,           // Format OpenGL uses for image
+            image->width, image->height, // Width and height
+            0,                // The border of the image
+            GL_RGB,           // GL_RGB, because pixels are stored in RGB format
+            GL_UNSIGNED_BYTE, // GL_UNSIGNED_BYTE, because pixels are stored as unsigned numbers
+            image->pixels);   // The actual pixel data
+
+        return textureId; // Returns the id of the texture
+    }
+
+    GLuint _textureId1;
+
+
 
 void lukisPaksi()
 {
@@ -142,7 +198,6 @@ void drawStripeOnSegment(float radius, float length) {
 
         // Horizontal stripe near the middle of the body
         float stripeY1 = y;
-        float stripeY2 = y + stripeHeight;
 
         glVertex3f(x, stripeY1, z1);  // lower edge of stripe at z1
         glVertex3f(x, stripeY1, z2);  // lower edge of stripe at z2
@@ -546,15 +601,32 @@ void drawFinTail() { //y=0.3 z=1.0 x=0.03
     glEnd();
 }
 
+float angleRadMove = 0;
+float dx = 0;
+float dz = 0;
 void drawRayquaza() {
     glPushMatrix();
+
     glTranslated(0, 2.0, 0);
+    glTranslated(moveX[NUM_SEGMENTS - 1], moveY[NUM_SEGMENTS - 1], moveZ[NUM_SEGMENTS - 1]);
+    
+
 
     for (int i = 0; i < NUM_SEGMENTS; i++) {
+
+        // Apply movement based on segment orientation
+        //angleRadMove = yawSegments[i] * M_PI / 180.0f;
+        //dx = sin(angleRadMove) * moveZ[i] + moveX[i];
+        //dz = cos(angleRadMove) * moveZ[i];
+
+        //glTranslatef(moveX[i], moveY[i], moveZ[i]); // Move in rotated direction
+        //cout << "angleRad= " << angleRadMove << " dx= " << dx << " dz= " << dz << endl;
+
         glColor3d(0.0078, 0.6000, 0.1412);//green
         glRotatef(yawSegments[i], 0.0f, 1.0f, 0.0f);
         glRotatef(pitchSegments[i], 1.0f, 0.0f, 0.0f); // rotate segment
 
+        
         if (i == 0) {
 
             glPushMatrix(); //top
@@ -579,6 +651,8 @@ void drawRayquaza() {
             glColor3d(0.0078, 0.6000, 0.1412); //body 
 
             drawCylinderSegment(0.1f, 1.0f);
+
+            //glPopMatrix();
         }
         else if (i == 1) {
             double scale = 0.7;
@@ -776,8 +850,6 @@ void drawRayquaza() {
             glPopMatrix();
 
 
-            //drawHead();
-
             //shhooting ball
             if (shooting) { //darshini
                 glPushMatrix();
@@ -837,10 +909,79 @@ void drawRayquaza() {
     glPopMatrix();
 }
 
+void drawSun() {
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, _textureId1);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glColor3f(1.0f, 0.84f, 0.0f);
+    glPushMatrix();
+    glTranslatef(9.0f, 10.0f, 5.0f);
+    glRotatef(30, 0.0f, 1.0f, 0.0f);
+    // Draw sphere 
+    glutSolidSphere(1.0f, 20, 20);
+    glPopMatrix();
+}
+
+void drawCloud(float x, float y, float z) {
+    glPushMatrix();
+    glTranslatef(x, y, z);
+
+    glColor4f(1.0f, 1.0f, 1.0f, 0.85f); // white, slightly transparent
+
+    // Enable blending for transparency
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Main big sphere
+    glPushMatrix();
+    glutSolidSphere(0.5, 30, 30);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(0.8f, 0.2f, -0.5f);
+    glutSolidSphere(0.2, 30, 30);
+    glPopMatrix();
+
+    // Side spheres
+    glPushMatrix();
+    glTranslatef(0.8f, 0.2f, 0.0f);
+    glutSolidSphere(0.4, 30, 30);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(-0.8f, 0.2f, 0.0f);
+    glutSolidSphere(0.4, 30, 30);
+    glPopMatrix();
+
+    // Top spheres
+    glPushMatrix();
+    glTranslatef(0.4f, 0.6f, 0.0f);
+    glutSolidSphere(0.3, 30, 30);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(-0.4f, 0.6f, 0.0f);
+    glutSolidSphere(0.4, 30, 30);
+    glPopMatrix();
+
+    // Disable blending after use
+    glDisable(GL_BLEND);
+
+    glPopMatrix();
+}
+
+
 
 void computePos(float deltaMove) {
     x += deltaMove * lx * 0.1f;
     z += deltaMove * lz * 0.1f;
+}
+
+void computeMovingPos(float move) {
+
 }
 
 void computeUpDown(float deltaY) {
@@ -851,22 +992,28 @@ void computeUpDown(float deltaY) {
 void pressKey(int key, int xx, int yy) { //control camera view
     switch (key) {
     case GLUT_KEY_UP:
-        deltaMove = 0.1f;
+        //deltaMove = 0.1f;
+        deltaMove = 0.2f;  
         break;
     case GLUT_KEY_DOWN:
-        deltaMove = -0.1f;
+        //deltaMove = -0.1f;
+        deltaMove = -0.2f;
         break;
     case GLUT_KEY_LEFT:
-        deltaAngleLR = -0.005f;
+        //deltaAngleLR = -0.005f;
+        deltaAngleLR = -0.05f;
         break;
     case GLUT_KEY_RIGHT:
-        deltaAngleLR = 0.005f;
+        //deltaAngleLR = 0.005f;
+        deltaAngleLR = 0.05f;
         break;
     case GLUT_KEY_PAGE_UP:
-        deltaY -= 0.03f;
+        //deltaY -= 0.03f;
+        deltaY -= 0.1f;
         break;
     case GLUT_KEY_PAGE_DOWN:
-        deltaY += 0.03f;
+        //deltaY += 0.03f;
+        deltaY += 0.4f;
         break;
     }
 }
@@ -926,7 +1073,7 @@ void mouseButton(int button, int state, int x, int y) { //control mouse
     }
 }
 
-void keyboard(unsigned char key, int x, int y)
+void keyboard(unsigned char key, int x, int y) //control body move
 {
     switch (key) {
     case 'e': moveUp = true; break;
@@ -934,6 +1081,16 @@ void keyboard(unsigned char key, int x, int y)
     case 's': moveLeft = true; break;
     case 'f': moveRight = true; break;
     case 'r': resetBody = true; break;
+
+    case 'i': forwardFront = true; break;
+    case 'k': forwardBack = true; break;
+    case 'j': forwardLeft = true; break;
+    case 'l': forwardRight = true; break;
+    case 'u': forwardUp = true; break;
+    case 'h': forwardDown = true; break;
+    case 'R': resetLocation = true; break;
+
+
     case 'z': //darshini
         if (!shooting) {
             shooting = true;
@@ -945,20 +1102,6 @@ void keyboard(unsigned char key, int x, int y)
     }
 }
 
-/*
-void keyboard(unsigned char key, int x, int y)
-{
-    switch (key) {
-    case 'e': moveUp = true; break;
-    case 'd': moveDown = true; break;
-    case 's': moveLeft = true; break;
-    case 'f': moveRight = true; break;
-    case 'r': resetBody = true; break;
-    case 27: exit(0); break;
-    }
-}
-*/
-
 
 void keyboardUp(unsigned char key, int x, int y)
 {
@@ -968,19 +1111,44 @@ void keyboardUp(unsigned char key, int x, int y)
     case 's': moveLeft = false; break;
     case 'f': moveRight = false; break;
     case'r':resetBody = false; break;
+
+    case 'i': forwardFront = false; break;
+    case 'k': forwardBack = false; break;
+    case 'j': forwardLeft = false; break;
+    case 'l': forwardRight = false; break;
+    case 'u': forwardUp = false; break;
+    case 'h': forwardDown = false; break;
+    case 'R': resetLocation = false; break;
     }
 }
 
-void updateBodyWave(float angleDelta, char direction) {
+void updateBodyWave(float angleDelta, char direction) { //e,s,d,f (for rotating) 
     // Adjust head rotation based on direction
-    if (direction == 's') // turn left
-        yawSegments[NUM_SEGMENTS - 1] -= angleDelta;
-    else if (direction == 'f') // turn right
-        yawSegments[NUM_SEGMENTS - 1] += angleDelta;
+    if (direction == 's') {// turn left
+        if (yawSegments[NUM_SEGMENTS - 1] > -50) {
+            yawSegments[NUM_SEGMENTS - 1] -= angleDelta;
+           
+        }
+       
+    }
+    else if (direction == 'f') {// turn right
+        if (yawSegments[NUM_SEGMENTS - 1] < 50) {
+            yawSegments[NUM_SEGMENTS - 1] += angleDelta;
+        }             
+    }
     else if (direction == 'e') // look up
-        pitchSegments[NUM_SEGMENTS - 1] -= angleDelta;
+    {
+        if (pitchSegments[NUM_SEGMENTS - 1] > -50) {
+            pitchSegments[NUM_SEGMENTS - 1] -= angleDelta;
+        }
+    }
     else if (direction == 'd') // look down
-        pitchSegments[NUM_SEGMENTS - 1] += angleDelta;
+    {
+        if (pitchSegments[NUM_SEGMENTS - 1] < 50) {
+            pitchSegments[NUM_SEGMENTS - 1] += angleDelta;
+            cout << pitchSegments[NUM_SEGMENTS - 1];
+        }
+    }
     else if (direction == 'r') {
         for (int i = NUM_SEGMENTS - 1; i >= 0; i--) {
             yawSegments[i] = 0;
@@ -996,29 +1164,74 @@ void updateBodyWave(float angleDelta, char direction) {
     }
 }
 
+void updateBodyLocation(float moveLocation, char direction) { // i,j,k,,l (for translating)
+    // Adjust head rotation based on direction
+    if (direction == 'i') // move forward
+        moveZ[NUM_SEGMENTS - 1] += moveLocation;
+    else if (direction == 'k') // move backward
+        moveZ[NUM_SEGMENTS - 1] -= moveLocation;
+    else if (direction == 'j') // move left
+        moveX[NUM_SEGMENTS - 1] -= moveLocation;
+    else if (direction == 'l') // move right
+        moveX[NUM_SEGMENTS - 1] += moveLocation;
+    else if (direction == 'u') // move up
+        moveY[NUM_SEGMENTS - 1] += moveLocation;
+    else if (direction == 'h') // move down
+        moveY[NUM_SEGMENTS - 1] -= moveLocation;
+    else if (direction == 'R') {
+        for (int i = NUM_SEGMENTS - 1; i >= 0; i--) {
+            moveX[i] = 0;
+            moveY[i] = 0;
+            moveZ[i] = 0;
+        }
+        return;
+    } //reset body position
+
+     // Smoothly update the rest of the body position
+    for (int i = NUM_SEGMENTS - 2; i >= 0; i--) {
+        moveX[i] += 0.08f * (moveX[i + 1] - moveX[i]);
+        moveY[i] += 0.08f * (moveY[i + 1] - moveY[i]);
+        moveZ[i] += 0.08f * (moveZ[i + 1] - moveZ[i]);
+    }
+}
+
+
 void keyboardRayquaza(unsigned char key, int x, int y)
 {
     switch (key) {
-    case 'e': //up
+    case 'e': //rotate up
         updateBodyWave(5.0f, 'e');
         glutPostRedisplay();
         break;
 
-    case 'd': //down
+    case 'd': //rotate down
         updateBodyWave(5.0f, 'd');
         glutPostRedisplay();
         break;
 
-    case 's': //left
+    case 's': //rotate left
         updateBodyWave(5.0f, 's');
         glutPostRedisplay();
         break;
 
-    case 'f': //right
-        updateBodyWave(5.0f, 'f');
+    case 'i': //move forward
+        updateBodyLocation(3.0f, 'i');
         glutPostRedisplay();
         break;
 
+    case 'k': //move backward
+        updateBodyLocation(3.0f, 'k');
+        glutPostRedisplay();
+        break;
+
+    case 'l': //move right
+        updateBodyLocation(3.0f, 'l');
+        glutPostRedisplay();
+        break;
+    case 'j': //move left
+        updateBodyLocation(3.0f, 'j');
+        glutPostRedisplay();
+        break;
     case 27:
         exit(0);
         break;
@@ -1040,6 +1253,20 @@ void update(int value)
         updateBodyWave(2.0f, 's');
     if (moveRight)
         updateBodyWave(2.0f, 'f');
+
+    if (forwardFront)
+        updateBodyLocation(0.5f, 'i');
+    if (forwardBack)
+        updateBodyLocation(0.5f, 'k');
+    if (forwardUp)
+        updateBodyLocation(0.5f, 'u');
+    if (forwardDown)
+        updateBodyLocation(0.5f, 'h');
+    if (forwardLeft)
+        updateBodyLocation(0.5f, 'j');
+    if (forwardRight)
+        updateBodyLocation(0.5f, 'l');
+
     if (resetBody)
         updateBodyWave(0.0f, 'r');
 
@@ -1066,9 +1293,22 @@ void update(int value)
         }
     }
 
+    //update cloud  position
+    cloudOffSet += 0.005f;
+    if (cloudOffSet > 100.0f) cloudOffSet = -100.0f;
+
+
     //origin
     glutPostRedisplay(); // redraw the screen
     glutTimerFunc(16, update, 0); // roughly 60 FPS
+}
+
+void setupClouds() {
+    for (int i = 0; i < NUM_CLOUDS; i++) {
+        cloudPosition[i][0] = (rand() % 200 - 100) / 10;
+        cloudPosition[i][1] = (rand() % 50 + 20) / 10;
+        cloudPosition[i][2] = (rand() % 200 - 100) / 10;
+    }
 }
 
 void display(void) { //equivalant to renderScene
@@ -1089,17 +1329,27 @@ void display(void) { //equivalant to renderScene
         x + lx, y + ly, z + lz,
         0.0f, 1.0f, 0.0f);
 
+    glLightfv(GL_LIGHT0, GL_POSITION, light_pos); // Make sure it's updated each frame
 
     //Draw ground plane
-    glColor3f(0.9f, 0.9f, 0.9f);
+    //glColor3f(0.9f, 0.9f, 0.9f);
+    glColor3d(0.56f, 0.93f, 0.56f); //dirt color
     glBegin(GL_QUADS);
-    glVertex3f(-100.0f, 0.0f, -100.0f);
-    glVertex3f(-100.0f, 0.0f, 100.0f);
-    glVertex3f(100.0f, 0.0f, 100.0f);
-    glVertex3f(100.0f, 0.0f, -100.0f);
+    glVertex3f(-100.0f, -5.0f, -100.0f);
+    glVertex3f(-100.0f, -5.0f, 100.0f);
+    glVertex3f(100.0f, -5.0f, 100.0f);
+    glVertex3f(100.0f, -5.0f, -100.0f);
     glEnd();
 
+    glPushMatrix();
+    glTranslated(0, 0, -3);
     drawRayquaza();
+    glPopMatrix();
+    drawSun();
+    for (int i = 0; i < NUM_CLOUDS; i++) {
+        drawCloud(cloudPosition[i][0]+cloudOffSet+5.0, cloudPosition[i][1]+5.0, cloudPosition[i][2]+5.0);
+    }
+    
 
     glutSwapBuffers();
 }
@@ -1107,11 +1357,32 @@ void display(void) { //equivalant to renderScene
 
 void init() {
     glEnable(GL_DEPTH_TEST);
-    glClearColor(1, 1, 1, 1);
+    glEnable(GL_COLOR_MATERIAL);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glEnable(GL_LIGHT1);
+    glEnable(GL_NORMALIZE);
+
+    Image* image1 = loadBMP("C:\\audio\\bmp6.bmp");
+    _textureId1 = loadTexture(image1);
+    delete image1;
+
+    glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+
+    // Optional: Light 1 if you want a second light
+     glLightfv(GL_LIGHT1, GL_POSITION, light1_pos);
+
+    // Set clear color to sky blue
+    glClearColor(0.584f, 0.961f, 1.0f, 1.0f);
+
+    // Set perspective
     glMatrixMode(GL_PROJECTION);
-    gluPerspective(45, 1.33, 1, 100);
+    gluPerspective(45.0, 1.33, 1.0, 100.0);
     glMatrixMode(GL_MODELVIEW);
 }
+
 
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
@@ -1120,6 +1391,8 @@ int main(int argc, char** argv) {
     glutCreateWindow("Rayquaza Mdeol");
 
     init();
+    srand(time(NULL));
+    setupClouds();
     glutDisplayFunc(display);
     glutTimerFunc(0, update, 0); //for body movement    
     glutReshapeFunc(reshape);
